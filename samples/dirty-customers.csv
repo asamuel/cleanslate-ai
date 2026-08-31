@@ -1,0 +1,13 @@
+id,full_name,email,country,age,plan,phone
+1001,Ada Lovelace,ada@example.com,United States,36,Pro,+1 202-555-0101
+1002,Grace Hopper,grace@example.com,USA,85,pro,+1 202-555-0102
+1003,Linus Torvalds,,Finland,56,Free,+358 40 1234567
+1004,Margaret Hamilton,margaret@example.com,U.S.A.,89,Pro,+1 202-555-0104
+1005,Dennis Ritchie,dennis@example.com,United States,70,PRO,+1 202-555-0105
+1006,Ken Thompson,ken-at-example.com,United States,83,Free,+1 202-555-0106
+1007,Guido van Rossum,guido@example.com,Netherlands,230,Pro,+31 6 12345678
+1008,James Gosling,james@example.com,Canada,71,Enterprise,+1 416-555-0108
+1009,Brendan Eich,brendan@example.com,USA,65,pro,+1 202-555-0109
+1009,Brendan Eich,brendan@example.com,USA,65,pro,+1 202-555-0109
+1010,José García,jose@example.com,Nicaragua,42,Free,+505 8888-1234
+1011,Zoë Müller,zoe@example.com,Germany,39,Pro,+49 151 12345678
