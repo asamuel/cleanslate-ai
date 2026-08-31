@@ -10,6 +10,7 @@ import { analyzeDataset } from '@/lib/analysis/analyze-dataset';
 import { AnalysisSummary } from '@/components/analysis-summary';
 import { applyAcceptedIssues } from '@/lib/analysis/apply-accepted-issues';
 import { IssueReview } from '@/components/issue-review';
+import { exportCsv } from '@/lib/csv/export-csv';
 
 export default function Home() {
   const [dataset, setDataset] = useState<CsvDataset | null>(null);
@@ -54,6 +55,14 @@ export default function Home() {
     setDataset(null);
     setIssues([]);
   };
+
+  function handleExport() {
+    if (!cleanedDataset) {
+      return;
+    }
+
+    exportCsv(cleanedDataset);
+  }
 
   const updateIssueStatus = (issueId: string, status: DataIssue['status']) => {
     setIssues((currentIssues) =>
@@ -110,14 +119,29 @@ export default function Home() {
                 </section>
               )}
 
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="rounded-md border px-4 py-2 text-sm font-medium transition hover:bg-zinc-50"
-                >
-                  Reset
-                </button>
+              <div className="flex items-center justify-between gap-3 border-t pt-6">
+                <p className="text-sm text-zinc-500">
+                  {issues.filter((issue) => issue.status === 'accepted').length} changes accepted
+                </p>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="rounded-md border px-4 py-2 text-sm font-medium transition hover:bg-zinc-50"
+                  >
+                    Reset
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    disabled={!cleanedDataset}
+                    className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Export cleaned CSV
+                  </button>
+                </div>
               </div>
             </>
           )}
