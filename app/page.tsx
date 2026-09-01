@@ -1,20 +1,30 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
+import { AnalysisSummary } from '@/components/analysis-summary';
 import { CsvUpload } from '@/components/csv-upload';
 import { DatasetPreview } from '@/components/dataset-preview';
 import { DatasetSummary } from '@/components/dataset-summary';
-import type { CsvDataset, DataIssue } from '@/types/data-quality';
-import { analyzeDataset } from '@/lib/analysis/analyze-dataset';
-import { AnalysisSummary } from '@/components/analysis-summary';
-import { applyAcceptedIssues } from '@/lib/analysis/apply-accepted-issues';
 import { IssueReview } from '@/components/issue-review';
+
+import { analyzeDataset } from '@/lib/analysis/analyze-dataset';
+import { applyAcceptedIssues } from '@/lib/analysis/apply-accepted-issues';
+import { analyzeWithAi } from '@/lib/ai/analyze-with-ai';
+import { MAX_AI_COLUMNS, MAX_AI_ROWS } from '@/lib/ai/constants';
 import { exportCsv } from '@/lib/csv/export-csv';
+
+import type { CsvDataset, DataIssue } from '@/types/data-quality';
 
 export default function Home() {
   const [dataset, setDataset] = useState<CsvDataset | null>(null);
   const [issues, setIssues] = useState<DataIssue[]>([]);
+
+  const [isAnalyzingAi, setIsAnalyzingAi] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSkippedReason, setAiSkippedReason] = useState<string | null>(null);
+
+  const analysisRequestIdRef = useRef(0);
 
   const cleanedDataset = useMemo(() => {
     if (!dataset) {
@@ -24,7 +34,72 @@ export default function Home() {
     return applyAcceptedIssues(dataset, issues);
   }, [dataset, issues]);
 
-  const handleIssueStatusChange = (issueId: string, status: DataIssue['status']) => {
+  const acceptedCount = issues.filter((issue) => issue.status === 'accepted').length;
+
+  function handleDatasetLoaded(nextDataset: CsvDataset) {
+    const deterministicIssues = analyzeDataset(nextDataset);
+
+    setDataset(nextDataset);
+    setIssues(deterministicIssues);
+    setAiError(null);
+    setAiSkippedReason(null);
+
+    void runAiAnalysis(nextDataset, deterministicIssues);
+  }
+
+  async function runAiAnalysis(targetDataset: CsvDataset, deterministicIssues: DataIssue[]) {
+    if (targetDataset.rows.length > MAX_AI_ROWS) {
+      setAiSkippedReason(
+        `AI analysis supports up to ${MAX_AI_ROWS} rows. Rule-based analysis is still available.`
+      );
+      return;
+    }
+
+    if (targetDataset.columns.length > MAX_AI_COLUMNS) {
+      setAiSkippedReason(
+        `AI analysis supports up to ${MAX_AI_COLUMNS} columns. Rule-based analysis is still available.`
+      );
+      return;
+    }
+
+    const requestId = ++analysisRequestIdRef.current;
+
+    setIsAnalyzingAi(true);
+    setAiError(null);
+    setAiSkippedReason(null);
+
+    try {
+      const aiIssues = await analyzeWithAi(targetDataset);
+
+      if (requestId !== analysisRequestIdRef.current) {
+        return;
+      }
+
+      setIssues([...deterministicIssues, ...aiIssues]);
+    } catch (error) {
+      if (requestId !== analysisRequestIdRef.current) {
+        return;
+      }
+
+      setAiError(error instanceof Error ? error.message : 'AI analysis failed. Please try again.');
+    } finally {
+      if (requestId === analysisRequestIdRef.current) {
+        setIsAnalyzingAi(false);
+      }
+    }
+  }
+
+  function handleRetryAiAnalysis() {
+    if (!dataset || isAnalyzingAi) {
+      return;
+    }
+
+    const deterministicIssues = issues.filter((issue) => issue.source === 'deterministic');
+
+    void runAiAnalysis(dataset, deterministicIssues);
+  }
+
+  function handleIssueStatusChange(issueId: string, status: DataIssue['status']) {
     setIssues((currentIssues) =>
       currentIssues.map((issue) =>
         issue.id === issueId
@@ -35,26 +110,16 @@ export default function Home() {
           : issue
       )
     );
-  };
+  }
 
-  const handleAllIssueStatuses = (status: DataIssue['status']) => {
+  function handleAllIssueStatuses(status: DataIssue['status']) {
     setIssues((currentIssues) =>
       currentIssues.map((issue) => ({
         ...issue,
         status,
       }))
     );
-  };
-
-  const handleDatasetLoaded = (nextDataset: CsvDataset) => {
-    setDataset(nextDataset);
-    setIssues(analyzeDataset(nextDataset));
-  };
-
-  const handleReset = () => {
-    setDataset(null);
-    setIssues([]);
-  };
+  }
 
   function handleExport() {
     if (!cleanedDataset) {
@@ -64,11 +129,15 @@ export default function Home() {
     exportCsv(cleanedDataset);
   }
 
-  const updateIssueStatus = (issueId: string, status: DataIssue['status']) => {
-    setIssues((currentIssues) =>
-      currentIssues.map((issue) => (issue.id === issueId ? { ...issue, status } : issue))
-    );
-  };
+  function handleReset() {
+    analysisRequestIdRef.current += 1;
+
+    setDataset(null);
+    setIssues([]);
+    setAiError(null);
+    setAiSkippedReason(null);
+    setIsAnalyzingAi(false);
+  }
 
   return (
     <main className="min-h-screen bg-white text-zinc-950">
@@ -96,7 +165,54 @@ export default function Home() {
 
               <DatasetPreview dataset={dataset} />
 
-              <AnalysisSummary issues={issues} />
+              <section>
+                <div className="mb-3 flex flex-wrap items-center gap-3">
+                  <span className="text-sm text-emerald-700">✓ Rule-based analysis complete</span>
+
+                  {isAnalyzingAi && (
+                    <span className="text-sm text-zinc-500">AI analysis in progress...</span>
+                  )}
+
+                  {!isAnalyzingAi && !aiError && !aiSkippedReason && (
+                    <span className="text-sm text-emerald-700">✓ AI analysis complete</span>
+                  )}
+                </div>
+
+                <AnalysisSummary issues={issues} />
+              </section>
+
+              {aiError && (
+                <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-amber-900">AI analysis unavailable</p>
+
+                      <p className="mt-1 text-sm text-amber-700">{aiError}</p>
+
+                      <p className="mt-1 text-xs text-amber-600">
+                        Rule-based analysis is still available.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleRetryAiAnalysis}
+                      disabled={isAnalyzingAi}
+                      className="rounded-md border border-amber-300 px-3 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-100 disabled:opacity-50"
+                    >
+                      Retry AI analysis
+                    </button>
+                  </div>
+                </section>
+              )}
+
+              {aiSkippedReason && (
+                <section className="rounded-xl border p-4">
+                  <p className="text-sm font-medium">AI analysis skipped</p>
+
+                  <p className="mt-1 text-sm text-zinc-500">{aiSkippedReason}</p>
+                </section>
+              )}
 
               <IssueReview
                 issues={issues}
@@ -119,12 +235,10 @@ export default function Home() {
                 </section>
               )}
 
-              <div className="flex items-center justify-between gap-3 border-t pt-6">
-                <p className="text-sm text-zinc-500">
-                  {issues.filter((issue) => issue.status === 'accepted').length} changes accepted
-                </p>
+              <div className="flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-zinc-500">{acceptedCount} changes accepted</p>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={handleReset}
