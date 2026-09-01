@@ -19,6 +19,10 @@ The application:
 
 The original dataset remains unchanged.
 
+## Preview
+
+![CleanSlate AI preview](./public/cleanslate-ai-preview.webp)
+
 ## Features
 
 - CSV upload with drag-and-drop
@@ -216,5 +220,5 @@ npm run format:check
 
 ## Links
 
-**Live App:** YOUR_DEPLOYMENT_URL  
+**Live App:** https://cleanslate-ai.vercel.app/
 **GitHub:** https://github.com/asamuel/cleanslate-ai
