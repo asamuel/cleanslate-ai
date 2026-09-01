@@ -1,5 +1,8 @@
 import { Columns3, FileSpreadsheet, Rows3 } from 'lucide-react';
 
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import type { CsvDataset } from '@/types/data-quality';
 
 interface DatasetSummaryProps {
@@ -8,11 +11,6 @@ interface DatasetSummaryProps {
 
 export function DatasetSummary({ dataset }: DatasetSummaryProps) {
   const items = [
-    {
-      label: 'File',
-      value: dataset.fileName,
-      icon: FileSpreadsheet,
-    },
     {
       label: 'Rows',
       value: dataset.rows.length.toLocaleString(),
@@ -23,29 +21,35 @@ export function DatasetSummary({ dataset }: DatasetSummaryProps) {
       value: dataset.columns.length.toLocaleString(),
       icon: Columns3,
     },
+    {
+      label: 'File',
+      value: dataset.fileName,
+      icon: FileSpreadsheet,
+    },
   ];
 
   return (
-    <section>
-      <p className="mb-3 text-sm font-medium">Dataset</p>
+    <Card className="rounded-xl shadow-none">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-base">Dataset summary</CardTitle>
 
-      <div className="grid overflow-hidden rounded-xl border md:grid-cols-3">
+        <Badge variant="secondary" className="font-normal">
+          Loaded
+        </Badge>
+      </CardHeader>
+
+      <CardContent className="grid gap-4 sm:grid-cols-3">
         {items.map(({ label, value, icon: Icon }) => (
-          <div
-            key={label}
-            className="flex items-center gap-3 border-b p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
-          >
-            <div className="rounded-md border p-2">
-              <Icon className="size-4" />
+          <div key={label} className="min-w-0 rounded-lg bg-muted/60 p-3">
+            <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+              <Icon className="size-3.5" />
+              <p className="text-xs">{label}</p>
             </div>
 
-            <div className="min-w-0">
-              <p className="text-xs text-zinc-500">{label}</p>
-              <p className="truncate text-sm font-medium">{value}</p>
-            </div>
+            <p className="truncate font-mono text-sm font-medium">{value}</p>
           </div>
         ))}
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   );
 }

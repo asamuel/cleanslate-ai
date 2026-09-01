@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { ArrowDownToLine, CheckCircle2, RotateCcw } from 'lucide-react';
 
 import { AnalysisSummary } from '@/components/analysis-summary';
 import { CsvUpload } from '@/components/csv-upload';
@@ -16,6 +17,8 @@ import { exportCsv } from '@/lib/csv/export-csv';
 import { isActionableIssue } from '@/lib/analysis/issue-utils';
 
 import type { CsvDataset, DataIssue } from '@/types/data-quality';
+import { AppHeader } from '@/components/app-header';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   const [dataset, setDataset] = useState<CsvDataset | null>(null);
@@ -156,41 +159,82 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-zinc-950">
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10">
-        <header className="mb-10 border-b pb-6">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-zinc-950 text-sm font-semibold text-white">
-              CS
-            </div>
+    <main className="min-h-screen bg-background">
+      <AppHeader />
 
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">CleanSlate AI</h1>
+      <div className="mx-auto max-w-[1440px] px-5 pb-28 pt-8 sm:px-8 lg:pt-12">
+        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_440px] xl:gap-12">
+          {/* Main dataset workflow */}
+          <div className="flex min-w-0 flex-col gap-10">
+            <section>
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                    Step 01
+                  </p>
 
-              <p className="text-sm text-zinc-500">AI-assisted CSV data quality review</p>
-            </div>
+                  <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Upload your dataset
+                  </h1>
+
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    We&apos;ll scan your CSV with deterministic checks and AI-assisted analysis.
+                  </p>
+                </div>
+
+                <div className="hidden rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground sm:block">
+                  CSV only · up to 5 MB
+                </div>
+              </div>
+
+              <CsvUpload onDatasetLoaded={handleDatasetLoaded} />
+            </section>
+
+            {dataset && (
+              <>
+                <DatasetSummary dataset={dataset} />
+
+                <DatasetPreview dataset={dataset} />
+              </>
+            )}
           </div>
-        </header>
 
-        <div className="space-y-8">
-          <CsvUpload onDatasetLoaded={handleDatasetLoaded} />
-
+          {/* Findings sidebar */}
           {dataset && (
-            <>
-              <DatasetSummary dataset={dataset} />
-
-              <DatasetPreview dataset={dataset} />
-
+            <aside className="flex min-w-0 flex-col gap-8 xl:pt-1">
               <section>
-                <div className="mb-3 flex flex-wrap items-center gap-3">
-                  <span className="text-sm text-emerald-700">✓ Rule-based analysis complete</span>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                      Step 02
+                    </p>
+
+                    <h2 className="text-2xl font-semibold tracking-tight">Review findings</h2>
+
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      Review every recommendation before applying changes.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
+                    <CheckCircle2 className="size-3.5 text-success" />
+                    Rule-based complete
+                  </span>
 
                   {isAnalyzingAi && (
-                    <span className="text-sm text-zinc-500">AI analysis in progress...</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-purple/30 bg-purple/10 px-3 py-1.5 text-xs text-purple">
+                      <span className="size-2 animate-pulse rounded-full bg-purple" />
+                      AI analyzing
+                    </span>
                   )}
 
                   {!isAnalyzingAi && !aiError && !aiSkippedReason && (
-                    <span className="text-sm text-emerald-700">✓ AI analysis complete</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-purple/30 bg-purple/10 px-3 py-1.5 text-xs text-purple">
+                      <CheckCircle2 className="size-3.5" />
+                      AI complete
+                    </span>
                   )}
                 </div>
 
@@ -198,35 +242,31 @@ export default function Home() {
               </section>
 
               {aiError && (
-                <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-amber-900">AI analysis unavailable</p>
+                <section className="rounded-xl border border-warning/30 bg-warning/10 p-4">
+                  <p className="text-sm font-medium">AI analysis unavailable</p>
 
-                      <p className="mt-1 text-sm text-amber-700">{aiError}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{aiError}</p>
 
-                      <p className="mt-1 text-xs text-amber-600">
-                        Rule-based analysis is still available.
-                      </p>
-                    </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Rule-based analysis is still available.
+                  </p>
 
-                    <button
-                      type="button"
-                      onClick={handleRetryAiAnalysis}
-                      disabled={isAnalyzingAi}
-                      className="rounded-md border border-amber-300 px-3 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-100 disabled:opacity-50"
-                    >
-                      Retry AI analysis
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRetryAiAnalysis}
+                    disabled={isAnalyzingAi}
+                    className="mt-3 rounded-md border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted disabled:opacity-50"
+                  >
+                    Retry AI analysis
+                  </button>
                 </section>
               )}
 
               {aiSkippedReason && (
-                <section className="rounded-xl border p-4">
+                <section className="rounded-xl border border-border bg-card p-4">
                   <p className="text-sm font-medium">AI analysis skipped</p>
 
-                  <p className="mt-1 text-sm text-zinc-500">{aiSkippedReason}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{aiSkippedReason}</p>
                 </section>
               )}
 
@@ -238,45 +278,65 @@ export default function Home() {
               />
 
               {cleanedDataset && (
-                <section className="rounded-xl border p-5">
+                <section className="rounded-xl border border-border bg-card p-4">
                   <p className="text-sm font-medium">Cleaned dataset</p>
 
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {cleanedDataset.rows.length} rows after accepted changes
-                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-muted/60 p-3">
+                      <p className="text-xs text-muted-foreground">Original rows</p>
 
-                  <p className="mt-1 text-xs text-zinc-400">
-                    Original dataset: {dataset.rows.length} rows
-                  </p>
+                      <p className="mt-1 font-mono text-sm font-medium">{dataset.rows.length}</p>
+                    </div>
+
+                    <div className="rounded-lg bg-muted/60 p-3">
+                      <p className="text-xs text-muted-foreground">Cleaned rows</p>
+
+                      <p className="mt-1 font-mono text-sm font-medium">
+                        {cleanedDataset.rows.length}
+                      </p>
+                    </div>
+                  </div>
                 </section>
               )}
-
-              <div className="flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-zinc-500">{acceptedChangeCount} changes accepted</p>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="rounded-md border px-4 py-2 text-sm font-medium transition hover:bg-zinc-50"
-                  >
-                    Reset
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleExport}
-                    disabled={!cleanedDataset}
-                    className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Export cleaned CSV
-                  </button>
-                </div>
-              </div>
-            </>
+            </aside>
           )}
         </div>
       </div>
+
+      {dataset && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-3 sm:px-8">
+            <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+              <CheckCircle2 className="size-4 text-success" />
+              {acceptedChangeCount} changes accepted
+            </div>
+
+            <div className="ml-auto flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="gap-2 hover:bg-muted"
+              >
+                <RotateCcw className="size-4" />
+                Reset
+              </Button>
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleExport}
+                disabled={!cleanedDataset}
+                className="gap-2"
+              >
+                <ArrowDownToLine className="size-4" />
+                Export cleaned CSV
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -1,3 +1,14 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
 import type { CsvDataset } from '@/types/data-quality';
 
 interface DatasetPreviewProps {
@@ -9,57 +20,52 @@ export function DatasetPreview({ dataset, maxRows = 8 }: DatasetPreviewProps) {
   const previewRows = dataset.rows.slice(0, maxRows);
 
   return (
-    <section>
-      <div className="mb-3 flex items-center justify-between">
+    <Card className="rounded-xl shadow-none">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div>
-          <p className="text-sm font-medium">Data preview</p>
+          <CardTitle className="text-base">Original preview</CardTitle>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Showing {previewRows.length} of {dataset.rows.length.toLocaleString()} rows
+          </p>
         </div>
+      </CardHeader>
 
-        <p className="text-xs text-zinc-500">
-          First {previewRows.length} of {dataset.rows.length} rows
-        </p>
-      </div>
+      <CardContent className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">#</TableHead>
 
-      <div className="overflow-hidden rounded-xl border">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-zinc-50">
-              <tr>
-                <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-zinc-500">
-                  #
-                </th>
+              {dataset.columns.map((column) => (
+                <TableHead key={column} className="whitespace-nowrap">
+                  {column}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {previewRows.map((row, rowIndex) => (
+              <TableRow key={rowIndex}>
+                <TableCell className="font-mono text-xs text-muted-foreground">
+                  {rowIndex + 1}
+                </TableCell>
 
                 {dataset.columns.map((column) => (
-                  <th
-                    key={column}
-                    className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-zinc-500"
-                  >
-                    {column}
-                  </th>
+                  <TableCell key={column} className="max-w-56 whitespace-nowrap">
+                    {row[column] ? (
+                      <span title={row[column]}>{row[column]}</span>
+                    ) : (
+                      <span className="italic text-muted-foreground">empty</span>
+                    )}
+                  </TableCell>
                 ))}
-              </tr>
-            </thead>
-
-            <tbody className="divide-y">
-              {previewRows.map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  <td className="whitespace-nowrap px-4 py-3 text-zinc-500">{rowIndex + 1}</td>
-
-                  {dataset.columns.map((column) => (
-                    <td
-                      key={column}
-                      className="max-w-64 truncate whitespace-nowrap px-4 py-3"
-                      title={row[column]}
-                    >
-                      {row[column] || <span className="italic text-zinc-400">empty</span>}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

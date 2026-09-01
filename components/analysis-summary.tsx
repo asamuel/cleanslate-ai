@@ -1,49 +1,74 @@
+import { AlertTriangle, CircleDashed, Copy, ListChecks, Shuffle } from 'lucide-react';
+
+import { Card, CardContent } from '@/components/ui/card';
+
 import type { DataIssue, IssueType } from '@/types/data-quality';
 
 interface AnalysisSummaryProps {
   issues: DataIssue[];
 }
 
-const issueTypes: Array<{
-  type: IssueType;
+const metrics: Array<{
+  type?: IssueType;
   label: string;
+  icon: typeof ListChecks;
+  tone: string;
 }> = [
-  { type: 'missing', label: 'Missing' },
-  { type: 'duplicate', label: 'Duplicates' },
-  { type: 'inconsistent', label: 'Inconsistent' },
-  { type: 'suspicious', label: 'Suspicious' },
+  {
+    label: 'Total issues',
+    icon: ListChecks,
+    tone: 'text-destructive',
+  },
+  {
+    type: 'missing',
+    label: 'Missing',
+    icon: CircleDashed,
+    tone: 'text-warning',
+  },
+  {
+    type: 'duplicate',
+    label: 'Duplicates',
+    icon: Copy,
+    tone: 'text-purple',
+  },
+  {
+    type: 'inconsistent',
+    label: 'Inconsistent',
+    icon: Shuffle,
+    tone: 'text-primary',
+  },
+  {
+    type: 'suspicious',
+    label: 'Suspicious',
+    icon: AlertTriangle,
+    tone: 'text-destructive',
+  },
 ];
 
 export function AnalysisSummary({ issues }: AnalysisSummaryProps) {
   return (
-    <section>
-      <p className="mb-3 text-sm font-medium">Analysis summary</p>
+    <div className="grid grid-cols-2 gap-3">
+      {metrics.map(({ type, label, icon: Icon, tone }, index) => {
+        const value = type ? issues.filter((issue) => issue.type === type).length : issues.length;
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <SummaryItem label="Total issues" value={issues.length} />
+        return (
+          <Card key={label} className={`rounded-xl shadow-none ${index === 0 ? 'col-span-2' : ''}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className={`font-mono text-2xl font-semibold ${tone}`}>{value}</p>
 
-        {issueTypes.map(({ type, label }) => (
-          <SummaryItem
-            key={type}
-            label={label}
-            value={issues.filter((issue) => issue.type === type).length}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
+                  <p className="mt-2 text-sm font-medium">{label}</p>
+                </div>
 
-interface SummaryItemProps {
-  label: string;
-  value: number;
-}
-
-function SummaryItem({ label, value }: SummaryItemProps) {
-  return (
-    <div className="rounded-xl border p-4">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
+                <div className="flex size-9 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                  <Icon className="size-4" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
