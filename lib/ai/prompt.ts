@@ -29,7 +29,7 @@ export function buildAnalysisPrompt({ columns, rows }: BuildAnalysisPromptOption
       - values that appear implausible for the surrounding column
       - obvious malformed values
       - likely data-entry mistakes
-
+    
     Rules:
 
     - Do not invent information.
@@ -41,6 +41,9 @@ export function buildAnalysisPrompt({ columns, rows }: BuildAnalysisPromptOption
     - Omit weak or speculative findings.
     - Never modify the source data.
     - Every suggestion will be reviewed by a human.
+    - When you identify an inconsistent normalization pattern, report every affected row that should be normalized.
+    - Do not return only a representative example.
+    - If the same inconsistent value appears in multiple rows, return an issue for each affected row.
 
     Columns:
     ${JSON.stringify(columns)}
