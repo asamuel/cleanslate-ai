@@ -1,5 +1,5 @@
 import type { DataIssue } from '@/types/data-quality';
-
+import { isActionableIssue } from '@/lib/analysis/issue-utils';
 interface IssueCardProps {
   issue: DataIssue;
   onStatusChange: (issueId: string, status: DataIssue['status']) => void;
@@ -8,6 +8,7 @@ interface IssueCardProps {
 export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
   const suggestedValue =
     issue.suggestedValue ?? (issue.type === 'duplicate' ? 'Remove row' : undefined);
+  const actionable = isActionableIssue(issue);
 
   return (
     <article className="rounded-xl border p-5">
@@ -46,7 +47,7 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
           onClick={() => onStatusChange(issue.id, 'rejected')}
           className="rounded-md border px-3 py-2 text-sm"
         >
-          Reject
+          {actionable ? (issue.type === 'duplicate' ? 'Keep row' : 'Reject') : 'Keep as-is'}
         </button>
 
         <button
@@ -54,7 +55,7 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
           onClick={() => onStatusChange(issue.id, 'accepted')}
           className="rounded-md bg-zinc-950 px-3 py-2 text-sm text-white"
         >
-          Accept
+          {actionable ? (issue.type === 'duplicate' ? 'Remove row' : 'Accept') : 'Acknowledge'}
         </button>
       </div>
     </article>

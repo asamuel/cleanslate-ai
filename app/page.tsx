@@ -13,6 +13,7 @@ import { applyAcceptedIssues } from '@/lib/analysis/apply-accepted-issues';
 import { analyzeWithAi } from '@/lib/ai/analyze-with-ai';
 import { MAX_AI_COLUMNS, MAX_AI_ROWS } from '@/lib/ai/constants';
 import { exportCsv } from '@/lib/csv/export-csv';
+import { isActionableIssue } from '@/lib/analysis/issue-utils';
 
 import type { CsvDataset, DataIssue } from '@/types/data-quality';
 
@@ -34,7 +35,9 @@ export default function Home() {
     return applyAcceptedIssues(dataset, issues);
   }, [dataset, issues]);
 
-  const acceptedCount = issues.filter((issue) => issue.status === 'accepted').length;
+  const acceptedChangeCount = issues.filter(
+    (issue) => issue.status === 'accepted' && isActionableIssue(issue)
+  ).length;
 
   function handleDatasetLoaded(nextDataset: CsvDataset) {
     const deterministicIssues = analyzeDataset(nextDataset);
@@ -112,11 +115,24 @@ export default function Home() {
     );
   }
 
-  function handleAllIssueStatuses(status: DataIssue['status']) {
+  function handleAcceptAllFixes() {
+    setIssues((currentIssues) =>
+      currentIssues.map((issue) =>
+        isActionableIssue(issue)
+          ? {
+              ...issue,
+              status: 'accepted',
+            }
+          : issue
+      )
+    );
+  }
+
+  function handleRejectAllIssues() {
     setIssues((currentIssues) =>
       currentIssues.map((issue) => ({
         ...issue,
-        status,
+        status: 'rejected',
       }))
     );
   }
@@ -217,8 +233,8 @@ export default function Home() {
               <IssueReview
                 issues={issues}
                 onStatusChange={handleIssueStatusChange}
-                onAcceptAll={() => handleAllIssueStatuses('accepted')}
-                onRejectAll={() => handleAllIssueStatuses('rejected')}
+                onAcceptAll={handleAcceptAllFixes}
+                onRejectAll={handleRejectAllIssues}
               />
 
               {cleanedDataset && (
@@ -236,7 +252,7 @@ export default function Home() {
               )}
 
               <div className="flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-zinc-500">{acceptedCount} changes accepted</p>
+                <p className="text-sm text-zinc-500">{acceptedChangeCount} changes accepted</p>
 
                 <div className="flex flex-wrap gap-2">
                   <button

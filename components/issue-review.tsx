@@ -51,7 +51,7 @@ export function IssueReview({
             onClick={onAcceptAll}
             className="rounded-md bg-zinc-950 px-3 py-2 text-sm text-white"
           >
-            Accept all
+            Accept all fixes
           </button>
         </div>
       </div>

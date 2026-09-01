@@ -25,6 +25,19 @@ export function validateAiAnalysis({
         return false;
       }
 
+      const actualValue = rows[issue.rowIndex][issue.column] ?? '';
+
+      if (actualValue !== issue.currentValue) {
+        console.warn('Discarding AI issue with mismatched current value:', issue);
+
+        return false;
+      }
+
+      if (issue.suggestedValue !== null && issue.suggestedValue === issue.currentValue) {
+        console.warn('Discarding AI no-op suggestion:', issue);
+        return false;
+      }
+
       return true;
     }),
   };
